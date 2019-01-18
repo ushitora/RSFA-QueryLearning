@@ -21,7 +21,7 @@ import theory.characters.CharPred;
 import theory.intervals.UnaryCharIntervalSolver;
 
 
-public class Hoge {
+public class Main {
     public static void main(String[] args) {
     	// System.out.println("Total:" + Runtime.getRuntime().totalMemory() / 1024 / 1024 + "MB");
     	//runRSFAExperiment();
