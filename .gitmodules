@@ -1,0 +1,4 @@
+[submodule "symbolicautomata"]
+	path = symbolicautomata
+	url = https://github.com/zaburo-ch/symbolicautomata
+	branch = add-method-to-get-reached-states
