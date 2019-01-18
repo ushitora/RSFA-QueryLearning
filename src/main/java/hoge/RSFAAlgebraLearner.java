@@ -59,20 +59,23 @@ public class RSFAAlgebraLearner<P, D> extends AlgebraLearner <SFA <P,D>, List <D
 		baLearnerFactory = balf;
 		perfCounters = new Hashtable <>();
 
-		// Initialize the performance counters we keep
 		perfCounters.put("CEGuardUpdates", 0);
-		perfCounters.put("CEStateUpdates", 0);
-		perfCounters.put("CEDet", 0);
-		perfCounters.put("CEComp", 0);
+		perfCounters.put("CETableUpdates", 0);
+		perfCounters.put("Condition1GuardUpdates", 0);
+		perfCounters.put("Condition1TableUpdates", 0);
+		perfCounters.put("Condition2GuardUpdates", 0);
+		perfCounters.put("Condition2TableUpdates", 0);
+		perfCounters.put("Condition3GuardUpdates", 0);
+		perfCounters.put("Condition3TableUpdates", 0);
     }
 
-//    private void incPerfCounter(String key) {
-//		if (!perfCounters.containsKey(key)) {
-//			throw new AssertionError("Invalid performance counter requested");
-//		}
-//		perfCounters.put(key, perfCounters.get(key) + 1);
-//		return;
-//	}
+    private void incPerfCounter(String key) {
+		if (!perfCounters.containsKey(key)) {
+			throw new AssertionError("Invalid performance counter requested");
+		}
+		perfCounters.put(key, perfCounters.get(key) + 1);
+		return;
+	}
 	
 	private SFA <P,D> copyModelClean() throws TimeoutException {    		    	
 		return SFA.MkSFA(model.getTransitions(), model.getInitialState(), model.getFinalStates(), ba);    	
@@ -143,6 +146,7 @@ public class RSFAAlgebraLearner<P, D> extends AlgebraLearner <SFA <P,D>, List <D
 					q1a.add(a);
 					if (!table.isSubseteq(rowx, table.getTempRow(q1a))) {
 						updateTransition(stateIdxq1, stateIdxx, a);
+						incPerfCounter("Condition1GuardUpdates");
 						return false;
 					}
 					
@@ -151,6 +155,7 @@ public class RSFAAlgebraLearner<P, D> extends AlgebraLearner <SFA <P,D>, List <D
 					ArrayList<Boolean> rowq2a = table.getTempRow(q2a);
 					if (table.isSubseteq(rowx, rowq2a)) {
 						updateTransition(stateIdxq2, stateIdxx, a);
+						incPerfCounter("Condition1GuardUpdates");
 						return false;
 					}
 					
@@ -161,6 +166,7 @@ public class RSFAAlgebraLearner<P, D> extends AlgebraLearner <SFA <P,D>, List <D
 							av.addAll(table.V.get(k));
 							
 							table.addCol(av);
+							incPerfCounter("Condition1TableUpdates");
 							throw new VIsExtendedException();
 						}
 					}
@@ -205,6 +211,7 @@ public class RSFAAlgebraLearner<P, D> extends AlgebraLearner <SFA <P,D>, List <D
 								ArrayList<Boolean> rowx2a = table.getTempRow(x2a);
 								if(!table.isSubseteq(table.T.get(rowIdxx1), rowx2a)) {
 									updateTransition(stateIdxx2, stateIdxx1, a);
+									incPerfCounter("Condition2GuardUpdates");
 									return false;
 								}
 								
@@ -216,6 +223,7 @@ public class RSFAAlgebraLearner<P, D> extends AlgebraLearner <SFA <P,D>, List <D
 										av.addAll(table.V.get(k));
 										
 										table.addCol(av);
+										incPerfCounter("Condition2TableUpdates");
 										throw new VIsExtendedException();
 									}
 								}
@@ -258,6 +266,7 @@ public class RSFAAlgebraLearner<P, D> extends AlgebraLearner <SFA <P,D>, List <D
 						Integer rowIdxx = stateIdxToRowIdx.get(stateIdxx);
 						if(table.T.get(rowIdxx).get(colIdxv2)) {
 							updateTransition(stateIdxq, stateIdxx, a);
+							incPerfCounter("Condition3GuardUpdates");
 							return false;
 						}
 					}
@@ -282,11 +291,13 @@ public class RSFAAlgebraLearner<P, D> extends AlgebraLearner <SFA <P,D>, List <D
 							ArrayList<Boolean> rowx = table.T.get(rowIdxx);
 							if (rowx.get(colIdxv2) && table.isSubseteq(rowx, rowqa)) {
 								updateTransition(stateIdxq, stateIdxx, a);
+								incPerfCounter("Condition3GuardUpdates");
 								return false;
 							}
 						}
 						
 						table.addRow(qa);
+						incPerfCounter("Condition3TableUpdates");
 						throw new UIsExtendedException();
 					}
 				}
@@ -319,9 +330,7 @@ public class RSFAAlgebraLearner<P, D> extends AlgebraLearner <SFA <P,D>, List <D
 	}
 	
 	private SFA<P,D> constructModel() throws TimeoutException {
-		Integer cnt = 0;
 		while(model == null) {
-			System.out.println(cnt++);
 			// build_model
 	    	stateIdxToRowIdx = table.getRowIndicesOfQ();
 	    	rowIdxQ0 = table.getRowIndicesOfQ0(stateIdxToRowIdx);
@@ -401,6 +410,7 @@ public class RSFAAlgebraLearner<P, D> extends AlgebraLearner <SFA <P,D>, List <D
 		}
 		if(!lhsEps.equals(MQw)) {
 			table.addColAllSuf(w);
+			incPerfCounter("CETableUpdates");
 			throw new VIsExtendedException();
 		}
 		
@@ -466,6 +476,7 @@ public class RSFAAlgebraLearner<P, D> extends AlgebraLearner <SFA <P,D>, List <D
 							}
 							if(notin) {
 								updateTransition(stateIdxq1, stateIdxq2, a);
+								incPerfCounter("CEGuardUpdates");
 								return;
 							}
 						}
@@ -487,6 +498,7 @@ public class RSFAAlgebraLearner<P, D> extends AlgebraLearner <SFA <P,D>, List <D
 						table.addRow(q1a);
 						table.addColAllSuf(v);
 					}
+					incPerfCounter("CETableUpdates");
 					throw new VIsExtendedException();
 				}
 			}
@@ -516,9 +528,11 @@ public class RSFAAlgebraLearner<P, D> extends AlgebraLearner <SFA <P,D>, List <D
 								ArrayList<Boolean> rowq2 = table.T.get(rowIdxq2);
 								if(!table.isSubseteq(rowq2, rowq1a)) {
 									updateTransition(stateIdxq1, stateIdxq2, a);
+									incPerfCounter("CEGuardUpdates");
 									return;
 								}else {
 									table.addColAllSuf(v);
+									incPerfCounter("CETableUpdates");
 									throw new VIsExtendedException();									
 								}
 							}
@@ -533,22 +547,38 @@ public class RSFAAlgebraLearner<P, D> extends AlgebraLearner <SFA <P,D>, List <D
 	
     /************************** Public Methods  ****************************/
 
-    public Integer getNumCEStateUpdates() { 
-    		return perfCounters.get("CEStateUpdates");
+    public Integer getNumCETableUpdates() { 
+		return perfCounters.get("CETableUpdates");
     }
     
     public Integer getNumCEGuardUpdates() {
-    		return perfCounters.get("CEGuardUpdates");
+		return perfCounters.get("CEGuardUpdates");
     }
     
-    public Integer getNumDetCE() {
-    		return perfCounters.get("CEDet");
+    public Integer Condition1GuardUpdates() {
+		return perfCounters.get("Condition1GuardUpdates");
     }
-    
-    public Integer getNumCompCE() {
-    		return perfCounters.get("CEComp");
-    }
-    
+
+    public Integer Condition1TableUpdates() {
+		return perfCounters.get("Condition1TableUpdates");
+	}
+
+    public Integer Condition2GuardUpdates() {
+		return perfCounters.get("Condition2GuardUpdates");
+	}
+	
+	public Integer Condition2TableUpdates() {
+		return perfCounters.get("Condition2TableUpdates");
+	}
+	
+	public Integer Condition3GuardUpdates() {
+		return perfCounters.get("Condition3GuardUpdates");
+	}
+	
+	public Integer Condition3TableUpdates() {
+		return perfCounters.get("Condition3TableUpdates");
+	}
+   
     /***********  Learning API  ***********/
 
     public SFA <P,D> getModel() throws TimeoutException {
@@ -580,7 +610,7 @@ public class RSFAAlgebraLearner<P, D> extends AlgebraLearner <SFA <P,D>, List <D
         List<D> ce;
         SFA<P,D> cleanModel = getModel();
         while ((ce = equiv.getCounterexample(cleanModel)) != null) {
-        	System.out.println("EQ throwed : ce = " + ce);
+        	// System.out.println("EQ throwed : ce = " + ce);
         	cleanModel = updateModel(ce);
         }
         return cleanModel;

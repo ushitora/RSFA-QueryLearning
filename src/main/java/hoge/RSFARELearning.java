@@ -37,8 +37,8 @@ public class RSFARELearning extends RELearning {
 		results[3] = equiv.getDistinctCeNum();
 		results[4] = equiv.getCachedCeNum();
 		results[5] = learner.getNumCEGuardUpdates();
-		results[6] = learner.getNumDetCE();
-		results[7] = learner.getNumCompCE();
+		// results[6] = learner.getNumDetCE();
+		// results[7] = learner.getNumCompCE();
   		return results;
 	}
 }

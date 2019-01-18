@@ -155,8 +155,8 @@ public class RSFAObservationTable<D> {
 		strToRowIdx.put(copied, U.size() - 1);
 
 		fill();
-		System.out.println("U is extended : |U| = " + U.size());
-		printTable();
+		//System.out.println("U is extended : |U| = " + U.size());
+		//printTable();
 	}
 	
 	public void addCol(List<D> v) throws TimeoutException {
@@ -167,8 +167,8 @@ public class RSFAObservationTable<D> {
 		strToColIdx.put(copied, V.size() - 1);
 
 		fill();
-		System.out.println("V is extended : |V| = " + V.size());
-		printTable();
+		//System.out.println("V is extended : |V| = " + V.size());
+		//printTable();
 	}
 	
 	public void addColAllSuf(List<D> v) throws TimeoutException {
@@ -184,8 +184,8 @@ public class RSFAObservationTable<D> {
 			suffix.remove(0);
 		}
 		fill();
-		System.out.println("V is extended : |V| = " + V.size());
-		printTable();
+		//System.out.println("V is extended : |V| = " + V.size());
+		//printTable();
 	}
 	
 	public void printTable() {
