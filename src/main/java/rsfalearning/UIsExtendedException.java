@@ -1,4 +1,4 @@
-package hoge;
+package rsfalearning;
 
 @SuppressWarnings("serial")
 public class UIsExtendedException extends RuntimeException {

@@ -1,4 +1,4 @@
-package hoge;
+package rsfalearning;
 
 import org.sat4j.specs.TimeoutException;
 
