@@ -115,6 +115,25 @@ public class RSFAAlgebraLearner<P, D> extends AlgebraLearner <SFA <P,D>, List <D
 		model = SFA.MkSFA(transitions, pseudoInitialStateIdx, finalStates, ba, false, false, true);
 	}
 	
+    private void removeOldLearners(Integer addedColNum) {
+		Integer newColStart = table.V.size() - addedColNum;
+		assert 1 <= newColStart;
+		for(Integer dstRowIdx=0;dstRowIdx<table.U.size();dstRowIdx++) {
+			for(Integer k=newColStart;k<table.V.size();k++) {
+				if(table.T.get(dstRowIdx).get(k)) {
+					for(Integer srcRowIdx=0;srcRowIdx<table.U.size();srcRowIdx++) {
+						Pair<Integer, Integer> key = new Pair<>(srcRowIdx, dstRowIdx);
+						if(modelGuards.containsKey(key)) {
+							modelGuards.remove(key);
+							algebraLearners.remove(key);
+						}
+					}
+					break;
+				}
+			}
+		}
+    }
+
 	private Boolean checkCondition1() throws TimeoutException {
 		assert !stateIdxToRowIdx.isEmpty();
 		for(Integer stateIdxq1=0;stateIdxq1<stateIdxToRowIdx.size();stateIdxq1++) {
@@ -584,25 +603,6 @@ public class RSFAAlgebraLearner<P, D> extends AlgebraLearner <SFA <P,D>, List <D
     public SFA <P,D> getModel() throws TimeoutException {
     	table = new RSFAObservationTable<D>(membOracle);
     	return constructModel();
-    }
-
-    private void removeOldLearners(Integer addedColNum) {
-		Integer newColStart = table.V.size() - addedColNum;
-		assert 1 <= newColStart;
-		for(Integer dstRowIdx=0;dstRowIdx<table.U.size();dstRowIdx++) {
-			for(Integer k=newColStart;k<table.V.size();k++) {
-				if(table.T.get(dstRowIdx).get(k)) {
-					for(Integer srcRowIdx=0;srcRowIdx<table.U.size();srcRowIdx++) {
-						Pair<Integer, Integer> key = new Pair<>(srcRowIdx, dstRowIdx);
-						if(modelGuards.containsKey(key)) {
-							modelGuards.remove(key);
-							algebraLearners.remove(key);
-						}
-					}
-					break;
-				}
-			}
-		}
     }
     
     public SFA <P,D> updateModel(List <D> counterexample) throws TimeoutException {
