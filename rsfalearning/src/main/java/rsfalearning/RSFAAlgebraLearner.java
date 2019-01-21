@@ -3,6 +3,7 @@ package rsfalearning;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.LinkedList;
 import java.util.List;
@@ -262,65 +263,100 @@ public class RSFAAlgebraLearner<P, D> extends AlgebraLearner <SFA <P,D>, List <D
 	}
 
 	private Boolean checkCondition3() throws TimeoutException {
-		for(Pair<Integer, Integer> p : table.lengthSortedColIdx) {
-			// skip epsilon
-			if(p.getFirst().equals(0)) continue;
-
-			Integer colIdxv1 = p.getSecond();
-			
-			List<D> v2 = new ArrayList<D>(table.V.get(colIdxv1));
-			D a = v2.get(0);
-			v2.remove(0);
-			
-			Integer colIdxv2 = table.strToColIdx.get(v2);
-			// prefix-closed
-			assert colIdxv2 != null;
-			
-			for(Integer stateIdxq=0;stateIdxq<stateIdxToRowIdx.size();stateIdxq++) {
-				Integer rowIdxq = stateIdxToRowIdx.get(stateIdxq);
-				if(!table.T.get(rowIdxq).get(colIdxv1)) {
-					for(Move<P, D> m : model.getMovesFrom(stateIdxq)) {
-						if(!m.hasModel(a, ba)) continue;
-						Integer stateIdxx = m.to;
-						Integer rowIdxx = stateIdxToRowIdx.get(stateIdxx);
-						if(table.T.get(rowIdxx).get(colIdxv2)) {
-							updateTransition(stateIdxq, stateIdxx, a);
-							incPerfCounter("Condition3GuardUpdates");
-							return false;
-						}
-					}
-				}else {
-					Boolean forallCondition = true;
-					for(Move<P, D> m : model.getMovesFrom(stateIdxq)) {
-						if(!m.hasModel(a, ba)) continue;
-						Integer stateIdxx = m.to;
-						Integer rowIdxx = stateIdxToRowIdx.get(stateIdxx);
-						if (table.T.get(rowIdxx).get(colIdxv2)) {
-							forallCondition = false;
-							break;
-						}
-					}
-					if(forallCondition) {
-						List<D> qa = new ArrayList<D>(table.U.get(rowIdxq));
-						qa.add(a);
-						ArrayList<Boolean> rowqa = table.getTempRow(qa);
+		for(Integer colIdxv1=1;colIdxv1<table.V.size();colIdxv1++) {
+			for(Integer stateIdxq1=0;stateIdxq1<stateIdxToRowIdx.size();stateIdxq1++) {
+				Integer rowIdxq1 = stateIdxToRowIdx.get(stateIdxq1);
+				
+				Boolean v1InLq1 = model.isFinalConfiguration(model.getReachedStates(stateIdxq1, table.V.get(colIdxv1), ba));
+				if(!v1InLq1.equals(table.T.get(rowIdxq1).get(colIdxv1))) {
+					// v1 in row(q) \not\Leftrightarrow v in L_q
+					
+					Integer v1Size = table.V.get(colIdxv1).size();
+					Integer left = 0, right = v1Size;
+					HashMap<Integer, Integer> foundq2 = new HashMap<>();
+					foundq2.put(right, stateIdxq1);
+					
+					while(right - left > 1) {
+						Integer mid = (left + right) / 2;
+						List<D> v2 = table.V.get(colIdxv1).subList(v1Size - mid, v1Size);
 						
-						for(Integer stateIdxx=0;stateIdxx<stateIdxToRowIdx.size();stateIdxx++) {
-							Integer rowIdxx = stateIdxToRowIdx.get(stateIdxx);
-							ArrayList<Boolean> rowx = table.T.get(rowIdxx);
-							if (rowx.get(colIdxv2) && table.isSubseteq(rowx, rowqa)) {
-								updateTransition(stateIdxq, stateIdxx, a);
+						Boolean forallCondition = true;
+						for(Integer stateIdxq2=0;stateIdxq2<stateIdxToRowIdx.size();stateIdxq2++) {
+							Integer rowIdxq2 = stateIdxToRowIdx.get(stateIdxq2);
+
+							Boolean v2InLq2 = model.isFinalConfiguration(model.getReachedStates(stateIdxq2, v2, ba));
+							List<D> q2v2 = new ArrayList<>(table.U.get(rowIdxq2));
+							q2v2.addAll(v2);
+							if(!v2InLq2.equals(membOracle.query(q2v2))){
+								foundq2.put(mid, stateIdxq2);
+								forallCondition = false;
+								break;
+							}
+						}
+						if(forallCondition) {
+							left = mid;
+						}else {
+							right = mid;
+						}
+					}
+					
+					List<D> v2 = new ArrayList<>(table.V.get(colIdxv1).subList(v1Size - left, v1Size));
+					D a = table.V.get(colIdxv1).get(v1Size - left - 1);
+
+					assert foundq2.containsKey(right);
+					Integer stateIdxq2 = foundq2.get(right);
+					Integer rowIdxq2 = stateIdxToRowIdx.get(stateIdxq2);
+					List<D> q2a = new ArrayList<>(table.U.get(rowIdxq2));
+					q2a.add(a);
+
+					// check transitions from q2
+					Collection<Move<P, D>> moves = model.getMovesFrom(stateIdxq2);
+					Set<Integer> destinations = new HashSet<>();
+					for(Move<P, D> m : moves) {
+						if(m.hasModel(a, ba)) {
+							destinations.add(m.to);
+						}
+					}
+					ArrayList<Boolean> rowq2a = table.getTempRow(q2a);
+					for(Integer stateIdxq3=0;stateIdxq3<stateIdxToRowIdx.size();stateIdxq3++) {
+						Integer rowIdxq3 = stateIdxToRowIdx.get(stateIdxq3);
+						if(table.isSubseteq(table.T.get(rowIdxq3), rowq2a)) {
+							if (!destinations.contains(stateIdxq3)) {
+								updateTransition(stateIdxq2, stateIdxq3, a);
+								incPerfCounter("Condition3GuardUpdates");
+								return false;
+							}
+						}else {
+							if (destinations.contains(stateIdxq3)) {
+								updateTransition(stateIdxq2, stateIdxq3, a);
 								incPerfCounter("Condition3GuardUpdates");
 								return false;
 							}
 						}
-						
-						table.addRow(qa);
-						incPerfCounter("Condition3TableUpdates");
-						throw new UIsExtendedException();
 					}
+
+					List<D> q2av2 = new ArrayList<>(q2a);
+					q2av2.addAll(v2);
+					if (membOracle.query(q2av2)) {
+						Boolean found = false;
+						for(Integer rowIdxu=0;rowIdxu<table.U.size();rowIdxu++) {
+							if(table.T.get(rowIdxu).equals(rowq2a)){
+								List<D> uv2 = new ArrayList<>(table.U.get(rowIdxu));
+								uv2.addAll(v2);
+								if(membOracle.query(uv2)) {
+									found = true;
+									break;
+								}
+							}
+						}
+						if(!found) {
+							table.addRow(q2a);
+						}
+					}
+					table.addCol(v2);
+					incPerfCounter("Condition3TableUpdates");
+					throw new VIsExtendedException(1);
 				}
-				
 			}
 		}
 		return true;
@@ -426,9 +462,9 @@ public class RSFAAlgebraLearner<P, D> extends AlgebraLearner <SFA <P,D>, List <D
 			}
 		}
 		if(!lhsEps.equals(MQw)) {
-			Integer addedColNum = table.addColAllSuf(w);
+			table.addCol(w);
 			incPerfCounter("CETableUpdates");
-			throw new VIsExtendedException(addedColNum);
+			throw new VIsExtendedException(1);
 		}
 		
 		Integer left = 0, right = w.size();
@@ -499,7 +535,6 @@ public class RSFAAlgebraLearner<P, D> extends AlgebraLearner <SFA <P,D>, List <D
 						}
 					}
 
-					Integer addedColNum = -1;
 					Boolean found = false;
 					for(Integer rowIdxu2=0;rowIdxu2<table.U.size();rowIdxu2++) {
 						if(table.T.get(rowIdxu2).equals(rowq1a)) {
@@ -507,18 +542,17 @@ public class RSFAAlgebraLearner<P, D> extends AlgebraLearner <SFA <P,D>, List <D
 							u2v.addAll(v);
 							if(membOracle.query(u2v)) {
 								found = true;
-								addedColNum = table.addColAllSuf(v);
+								table.addCol(v);
 								break;
 							}
 						}
 					}
 					if(!found) {
 						table.addRow(q1a);
-						addedColNum = table.addColAllSuf(v);
+						table.addCol(v);
 					}
 					incPerfCounter("CETableUpdates");
-					assert addedColNum != -1;
-					throw new VIsExtendedException(addedColNum);
+					throw new VIsExtendedException(1);
 				}
 			}
 			// never reach this
@@ -550,9 +584,9 @@ public class RSFAAlgebraLearner<P, D> extends AlgebraLearner <SFA <P,D>, List <D
 									incPerfCounter("CEGuardUpdates");
 									return;
 								}else {
-									Integer addedColNum = table.addColAllSuf(v);
+									table.addCol(v);
 									incPerfCounter("CETableUpdates");
-									throw new VIsExtendedException(addedColNum);
+									throw new VIsExtendedException(1);
 								}
 							}
 						}
