@@ -171,7 +171,8 @@ public class RSFAObservationTable<D> {
 		//printTable();
 	}
 	
-	public void addColAllSuf(List<D> v) throws TimeoutException {
+	public Integer addColAllSuf(List<D> v) throws TimeoutException {
+		Integer addedColNum = 0;
 		List<D> suffix = new LinkedList<D>(v);
 		while(!suffix.isEmpty()) {
 			if (!strToColIdx.containsKey(suffix)) {
@@ -180,12 +181,14 @@ public class RSFAObservationTable<D> {
 				V.add(copied);
 				lengthSortedColIdx.add(new Pair<>(copied.size(), V.size() - 1));
 				strToColIdx.put(copied, V.size() - 1);
+				addedColNum++;
 			}
 			suffix.remove(0);
 		}
 		fill();
 		//System.out.println("V is extended : |V| = " + V.size());
 		//printTable();
+		return addedColNum;
 	}
 	
 	public void printTable() {

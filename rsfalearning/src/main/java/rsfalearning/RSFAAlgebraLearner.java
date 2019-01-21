@@ -167,7 +167,7 @@ public class RSFAAlgebraLearner<P, D> extends AlgebraLearner <SFA <P,D>, List <D
 							
 							table.addCol(av);
 							incPerfCounter("Condition1TableUpdates");
-							throw new VIsExtendedException();
+							throw new VIsExtendedException(1);
 						}
 					}
 					
@@ -224,7 +224,7 @@ public class RSFAAlgebraLearner<P, D> extends AlgebraLearner <SFA <P,D>, List <D
 										
 										table.addCol(av);
 										incPerfCounter("Condition2TableUpdates");
-										throw new VIsExtendedException();
+										throw new VIsExtendedException(1);
 									}
 								}
 
@@ -321,9 +321,7 @@ public class RSFAAlgebraLearner<P, D> extends AlgebraLearner <SFA <P,D>, List <D
 				model = null;
 			}catch (VIsExtendedException e) {
 				model = null;
-				// TODO : Currently, waste all leaner.
-				algebraLearners = new HashMap<>();
-				modelGuards = new HashMap<>();
+				removeOldLearners(e.addedColNum);
 			}
 			break;
 		}
@@ -409,9 +407,9 @@ public class RSFAAlgebraLearner<P, D> extends AlgebraLearner <SFA <P,D>, List <D
 			}
 		}
 		if(!lhsEps.equals(MQw)) {
-			table.addColAllSuf(w);
+			Integer addedColNum = table.addColAllSuf(w);
 			incPerfCounter("CETableUpdates");
-			throw new VIsExtendedException();
+			throw new VIsExtendedException(addedColNum);
 		}
 		
 		Integer left = 0, right = w.size();
@@ -481,7 +479,8 @@ public class RSFAAlgebraLearner<P, D> extends AlgebraLearner <SFA <P,D>, List <D
 							}
 						}
 					}
-					
+
+					Integer addedColNum = -1;
 					Boolean found = false;
 					for(Integer rowIdxu2=0;rowIdxu2<table.U.size();rowIdxu2++) {
 						if(table.T.get(rowIdxu2).equals(rowq1a)) {
@@ -489,17 +488,18 @@ public class RSFAAlgebraLearner<P, D> extends AlgebraLearner <SFA <P,D>, List <D
 							u2v.addAll(v);
 							if(membOracle.query(u2v)) {
 								found = true;
-								table.addColAllSuf(v);
+								addedColNum = table.addColAllSuf(v);
 								break;
 							}
 						}
 					}
 					if(!found) {
 						table.addRow(q1a);
-						table.addColAllSuf(v);
+						addedColNum = table.addColAllSuf(v);
 					}
 					incPerfCounter("CETableUpdates");
-					throw new VIsExtendedException();
+					assert addedColNum != -1;
+					throw new VIsExtendedException(addedColNum);
 				}
 			}
 			// never reach this
@@ -531,9 +531,9 @@ public class RSFAAlgebraLearner<P, D> extends AlgebraLearner <SFA <P,D>, List <D
 									incPerfCounter("CEGuardUpdates");
 									return;
 								}else {
-									table.addColAllSuf(v);
+									Integer addedColNum = table.addColAllSuf(v);
 									incPerfCounter("CETableUpdates");
-									throw new VIsExtendedException();									
+									throw new VIsExtendedException(addedColNum);
 								}
 							}
 						}
@@ -586,6 +586,25 @@ public class RSFAAlgebraLearner<P, D> extends AlgebraLearner <SFA <P,D>, List <D
     	return constructModel();
     }
 
+    private void removeOldLearners(Integer addedColNum) {
+		Integer newColStart = table.V.size() - addedColNum;
+		assert 1 <= newColStart;
+		for(Integer dstRowIdx=0;dstRowIdx<table.U.size();dstRowIdx++) {
+			for(Integer k=newColStart;k<table.V.size();k++) {
+				if(table.T.get(dstRowIdx).get(k)) {
+					for(Integer srcRowIdx=0;srcRowIdx<table.U.size();srcRowIdx++) {
+						Pair<Integer, Integer> key = new Pair<>(srcRowIdx, dstRowIdx);
+						if(modelGuards.containsKey(key)) {
+							modelGuards.remove(key);
+							algebraLearners.remove(key);
+						}
+					}
+					break;
+				}
+			}
+		}
+    }
+    
     public SFA <P,D> updateModel(List <D> counterexample) throws TimeoutException {
         if (model == null) {
             throw new AssertionError("UpdateModel called without first building a model");
@@ -599,9 +618,7 @@ public class RSFAAlgebraLearner<P, D> extends AlgebraLearner <SFA <P,D>, List <D
 			model = null;
 		}catch (VIsExtendedException e) {
 			model = null;
-			// TODO : Currently, waste all leaner.
-			algebraLearners = new HashMap<>();
-			modelGuards = new HashMap<>();
+			removeOldLearners(e.addedColNum);
 		}
         return constructModel();
     }
