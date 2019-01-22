@@ -75,17 +75,20 @@ public class RSFAObservationTable<D> {
 	public ArrayList<Integer> getRowIndicesOfQ(){
 		ArrayList<Integer> primeIndices = new ArrayList<Integer>();
 		for(Integer i=0;i<U.size();i++) {
-			ArrayList<Boolean> subsetUnion = new ArrayList<Boolean>(Collections.nCopies(V.size(), false));
+			ArrayList<Boolean> subsetUnion = null;
 			for(Integer j=0;j<U.size();j++) {
 				if (i == j) continue;
 				if (isSubseteq(T.get(j), T.get(i))) {
 					assert !T.get(i).equals(T.get(j));
+					if(subsetUnion == null) {
+						subsetUnion = new ArrayList<Boolean>(Collections.nCopies(V.size(), false));
+					}
 					for(Integer k=0;k<V.size();k++) {
 						subsetUnion.set(k, (subsetUnion.get(k) || T.get(j).get(k)));
 					}
 				}
 			}
-			if (!subsetUnion.equals(T.get(i))) {
+			if (subsetUnion == null || !subsetUnion.equals(T.get(i))) {
 				primeIndices.add(i);
 			}
 		}
