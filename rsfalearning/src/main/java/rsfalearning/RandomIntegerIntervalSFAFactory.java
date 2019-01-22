@@ -5,8 +5,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Random;
+import java.util.Map.Entry;
 
 import org.sat4j.specs.TimeoutException;
 
@@ -14,67 +14,72 @@ import automata.sfa.SFA;
 import automata.sfa.SFAEpsilon;
 import automata.sfa.SFAInputMove;
 import automata.sfa.SFAMove;
-import theory.characters.CharPred;
-import theory.intervals.UnaryCharIntervalSolver;
+import theory.BooleanAlgebra;
+import theory.intervals.IntPred;
+import theory.intervals.IntegerSolver;
 
-public class RandomEqualitySFAFactory {
+public class RandomIntegerIntervalSFAFactory {
 
 	private Integer stateNum;
 	private Integer transitionNum;
-	private Integer actualCharSize;
+	private Integer actualIntervalNum;
 	private Double initailStateProbability;
 	private Double finalStateProbability;
 	private Random random;
-	private UnaryCharIntervalSolver ba;
+	private BooleanAlgebra<IntPred, Integer> ba;
 	
-	public RandomEqualitySFAFactory(Integer stateNum, Integer transitionNum, Integer actualCharSize,
+	// [intMin, intMax]
+	public RandomIntegerIntervalSFAFactory(Integer stateNum, Integer transitionNum, Integer actualIntervalNum,
 			Double initailStateProbability, Double finalStateProbability, Long randomSeed) {
 		this.stateNum = Integer.valueOf(stateNum);
 		this.transitionNum = Integer.valueOf(transitionNum);
-		this.actualCharSize = Integer.valueOf(actualCharSize);
+		this.actualIntervalNum = Integer.valueOf(actualIntervalNum);
 		this.initailStateProbability = Double.valueOf(initailStateProbability);
 		this.finalStateProbability = Double.valueOf(finalStateProbability);
 		this.random = new Random(randomSeed);
-		ba = new UnaryCharIntervalSolver();
+		ba = new IntegerSolver();
 	}
 	
-	public SFA<CharPred, Character> generate() throws TimeoutException{
+	public SFA<IntPred, Integer> generate() throws TimeoutException{
 		final Integer pseudoInitialStateIdx = stateNum;
-		List<SFAMove<CharPred, Character>> transitions = new ArrayList<>();
+		List<SFAMove<IntPred, Integer>> transitions = new ArrayList<>();
 		List<Integer> finalStates = new ArrayList<>();
 
-		ArrayList<Character> actualChars = new ArrayList<>();
-		for(int i=0;i<=Character.MAX_VALUE;i++) {
-			actualChars.add((char)i);
+		ArrayList<Integer> borders = new ArrayList<>();
+		for(int i=0;i<2 * actualIntervalNum;i++) {
+			borders.add(random.nextInt());
 		}
-		Collections.shuffle(actualChars, random);
-		actualChars.subList(actualCharSize, actualChars.size()).clear();
-		assert actualCharSize.equals(actualChars.size());
+		Collections.sort(borders);
+
+		ArrayList<IntPred> actualIntervals = new ArrayList<>();
+		for(int i=0;i<actualIntervalNum;i++) {
+			actualIntervals.add(new IntPred(borders.get(2 * i), borders.get(2 * i + 1)));
+		}
 
 		for(Integer stateIdx=0;stateIdx<stateNum;stateIdx++) {
 			if (random.nextDouble() < initailStateProbability) {
-				transitions.add(new SFAEpsilon<CharPred, Character>(pseudoInitialStateIdx, stateIdx));
+				transitions.add(new SFAEpsilon<IntPred, Integer>(pseudoInitialStateIdx, stateIdx));
 			}
 			if (random.nextDouble() < finalStateProbability) {
 				finalStates.add(stateIdx);
 			}
 
-			Map<Integer, List<Character>> edge = new HashMap<>();
+			Map<Integer, List<IntPred>> edge = new HashMap<>();
 			for(Integer i=0;i<transitionNum;i++) {
 				Integer to = random.nextInt(stateNum);
-				Character c = actualChars.get(random.nextInt(actualCharSize));
+				IntPred interval = actualIntervals.get(random.nextInt(actualIntervalNum));
 				if (!edge.containsKey(to)) {
 					edge.put(to, new ArrayList<>());
 				}
-				edge.get(to).add(c);
+				edge.get(to).add(interval);
 			}
-			
-			for(Entry<Integer, List<Character>> entry : edge.entrySet()) {
-				CharPred phi = ba.False();
-				for (Character c : entry.getValue()) {
-					phi = ba.MkOr(ba.MkAtom(c), phi);
+
+			for(Entry<Integer, List<IntPred>> entry : edge.entrySet()) {
+				IntPred phi = ba.False();
+				for (IntPred interval : entry.getValue()) {
+					phi = ba.MkOr(interval, phi);
 				}
-				transitions.add(new SFAInputMove<CharPred, Character>(stateIdx, entry.getKey(), phi));
+				transitions.add(new SFAInputMove<IntPred, Integer>(stateIdx, entry.getKey(), phi));
 			}
 		}
 

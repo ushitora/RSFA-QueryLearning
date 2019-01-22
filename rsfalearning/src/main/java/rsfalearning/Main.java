@@ -18,6 +18,8 @@ import automata.sfa.SFA;
 import benchmark.SFAprovider;
 import benchmark.algebralearning.RELearning;
 import theory.characters.CharPred;
+import theory.intervals.IntPred;
+import theory.intervals.IntegerSolver;
 import theory.intervals.UnaryCharIntervalSolver;
 
 
@@ -25,11 +27,92 @@ public class Main {
     public static void main(String[] args) {
     	// System.out.println("Total:" + Runtime.getRuntime().totalMemory() / 1024 / 1024 + "MB");
     	//runRSFAExperiment();
-    	runRandomNFAExperiment();
+    	//runRandomEqualitySFAExperiment();
+    	runRandomIntegerIntervalSFAExperiment();
     }
     
-    private static void runRandomNFAExperiment() {
-    	RandomSFAFactory factory = new RandomSFAFactory(10, 2, 2, 0.5, 0.5, 1L);
+    private static void runRandomIntegerIntervalSFAExperiment() {
+    	RandomIntegerIntervalSFAFactory factory = new RandomIntegerIntervalSFAFactory(10, 2, 2, 0.5, 0.5, 1L);
+    	
+    	for(int i=0;i<100000;i++) {
+    		SFA<IntPred, Integer> target;
+    		try {
+        		target = factory.generate();
+    		}catch (TimeoutException e) {
+    			// try again
+    			i--;
+    			continue;
+    		}
+    		
+    		assert target != null;
+
+    		System.out.printf("%d,%d", i, target.stateCount());
+    		// Deterministic SFA
+    		try {
+    			IntegerSolver solver = new IntegerSolver();
+    			SFAMembershipOracle<IntPred, Integer> memb = new SFAMembershipOracle<>(target, solver);
+    			SFAEquivalenceOracle<IntPred, Integer> equiv = new SFAEquivalenceOracle<>(target, solver);
+    			IntegerIntervalAlgebraLearnerFactory learnerFactory = new IntegerIntervalAlgebraLearnerFactory(solver);
+    			SFAAlgebraLearner<IntPred, Integer> learner = new SFAAlgebraLearner<>(memb, solver, learnerFactory);
+    			SFA<IntPred, Integer> output = learner.getModelFinal(equiv);
+
+    			Integer[] performances = {
+    				output.stateCount(),
+    				memb.getDistinctQueries(),
+    				equiv.getDistinctCeNum(),
+    				equiv.getCachedCeNum(),
+    				learner.getNumCEGuardUpdates(),
+    				learner.getNumCEStateUpdates(),
+    				learner.getNumDetCE(),
+    				learner.getNumCompCE()
+    			};
+    			for(Integer perf : performances) {
+    				System.out.printf(",%d", perf);
+    			}
+    		}catch (TimeoutException e) {
+    			for(int k=0;k<8;k++) {
+    				System.out.printf(",-1");
+    			}
+    		}
+    		
+    		// Residual SFA
+    		try {
+    			IntegerSolver solver = new IntegerSolver();
+    			SFAMembershipOracle<IntPred, Integer> memb = new SFAMembershipOracle<>(target, solver);
+    			SFAEquivalenceOracle<IntPred, Integer> equiv = new SFAEquivalenceOracle<>(target, solver);
+    			IntegerIntervalAlgebraLearnerFactory learnerFactory = new IntegerIntervalAlgebraLearnerFactory(solver);
+    			RSFAAlgebraLearner<IntPred, Integer> learner = new RSFAAlgebraLearner<>(memb, solver, learnerFactory);
+    			SFA<IntPred, Integer> output = learner.getModelFinal(equiv);
+    			
+    			Integer[] performances = {
+    				output.stateCount(),
+    				memb.getDistinctQueries(),
+    				equiv.getDistinctCeNum(),
+    				equiv.getCachedCeNum(),
+    				learner.getNumCEGuardUpdates(),
+    				learner.getNumCETableUpdates(),
+    				learner.Condition1GuardUpdates(),
+    				learner.Condition1TableUpdates(),
+    				learner.Condition2GuardUpdates(),
+    				learner.Condition2TableUpdates(),
+    				learner.Condition3GuardUpdates(),
+    				learner.Condition3TableUpdates()
+    			};
+    			for(Integer perf : performances) {
+    				System.out.printf(",%d", perf);
+    			}
+    		}catch (TimeoutException e) {
+    			for(int k=0;k<12;k++) {
+    				System.out.printf(",-1");
+    			}
+    		}
+			System.out.printf("\n");
+    		System.out.flush();
+    	}
+    }
+    
+    private static void runRandomEqualitySFAExperiment() {
+    	RandomEqualitySFAFactory factory = new RandomEqualitySFAFactory(10, 2, 2, 0.5, 0.5, 1L);
     	for(int i=0;i<100000;i++) {
     		SFA<CharPred, Character> target;
     		try {
