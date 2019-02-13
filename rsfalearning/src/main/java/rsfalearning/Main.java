@@ -32,7 +32,7 @@ public class Main {
     }
     
     private static void runRandomIntegerIntervalSFAExperiment() {
-    	RandomIntegerIntervalSFAFactory factory = new RandomIntegerIntervalSFAFactory(10, 2, 2, 0.5, 0.5, 1L);
+    	RandomIntegerIntervalSFAFactory factory = new RandomIntegerIntervalSFAFactory(8, 2, 2, 0.5, 0.5, 1L);
     	
     	for(int i=0;i<100000;i++) {
     		SFA<IntPred, Integer> target;
@@ -96,7 +96,9 @@ public class Main {
     				learner.Condition2GuardUpdates(),
     				learner.Condition2TableUpdates(),
     				learner.Condition3GuardUpdates(),
-    				learner.Condition3TableUpdates()
+    				learner.Condition3TableUpdates(),
+    				learner.getSizeU(),
+    				learner.getSizeV()
     			};
     			for(Integer perf : performances) {
     				System.out.printf(",%d", perf);

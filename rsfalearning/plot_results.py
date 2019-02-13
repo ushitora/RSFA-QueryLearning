@@ -12,7 +12,7 @@ def get_results(filename):
         'dsfa_ce_guard', 'dsfa_ce_state', 'dsfa_det_ce', 'dsfa_comp_ce',
         'rsfa_state', 'rsfa_mq', 'rsfa_eq', 'rsfa_eq_cached', 'rsfa_ce_guard',
         'rsfa_ce_table', 'rsfa_cond1_guard', 'rsfa_cond1_table', 'rsfa_cond2_guard',
-        'rsfa_cond2_table', 'rsfa_cond3_guard', 'rsfa_cond3_table'
+        'rsfa_cond2_table', 'rsfa_cond3_guard', 'rsfa_cond3_table', '|U|', '|V|'
     ]
     results.columns = header
     return results

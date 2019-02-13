@@ -631,7 +631,15 @@ public class RSFAAlgebraLearner<P, D> extends AlgebraLearner <SFA <P,D>, List <D
 	public Integer Condition3TableUpdates() {
 		return perfCounters.get("Condition3TableUpdates");
 	}
-   
+	
+	public Integer getSizeU() {
+		return table.U.size();
+	}
+
+	public Integer getSizeV() {
+		return table.V.size();
+	}
+
     /***********  Learning API  ***********/
 
     public SFA <P,D> getModel() throws TimeoutException {

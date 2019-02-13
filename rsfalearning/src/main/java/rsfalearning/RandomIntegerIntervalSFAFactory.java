@@ -67,11 +67,16 @@ public class RandomIntegerIntervalSFAFactory {
 			Map<Integer, List<IntPred>> edge = new HashMap<>();
 			for(Integer i=0;i<transitionNum;i++) {
 				Integer to = random.nextInt(stateNum);
-				IntPred interval = actualIntervals.get(random.nextInt(actualIntervalNum));
+				Integer left = random.nextInt(), right = random.nextInt();
+				if(left > right) {
+					Integer temp = left;
+					left = right;
+					right = temp;
+				}
 				if (!edge.containsKey(to)) {
 					edge.put(to, new ArrayList<>());
 				}
-				edge.get(to).add(interval);
+				edge.get(to).add(new IntPred(left, right));
 			}
 
 			for(Entry<Integer, List<IntPred>> entry : edge.entrySet()) {
