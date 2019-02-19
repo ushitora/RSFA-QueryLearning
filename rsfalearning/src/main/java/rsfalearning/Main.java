@@ -64,7 +64,9 @@ public class Main {
     				learner.getNumCEGuardUpdates(),
     				learner.getNumCEStateUpdates(),
     				learner.getNumDetCE(),
-    				learner.getNumCompCE()
+    				learner.getNumCompCE(),
+    				learner.getNumCouterexampleForGuard(),
+    				learner.getNumExecutedInstances()
     			};
     			for(Integer perf : performances) {
     				System.out.printf(",%d", perf);
@@ -98,7 +100,9 @@ public class Main {
     				learner.Condition3GuardUpdates(),
     				learner.Condition3TableUpdates(),
     				learner.getSizeU(),
-    				learner.getSizeV()
+    				learner.getSizeV(),
+    				learner.getNumCouterexampleForGuard(),
+    				learner.getNumExecutedInstances()
     			};
     			for(Integer perf : performances) {
     				System.out.printf(",%d", perf);

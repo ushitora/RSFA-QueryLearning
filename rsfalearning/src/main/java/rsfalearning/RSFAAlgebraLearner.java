@@ -68,6 +68,8 @@ public class RSFAAlgebraLearner<P, D> extends AlgebraLearner <SFA <P,D>, List <D
 		perfCounters.put("Condition2TableUpdates", 0);
 		perfCounters.put("Condition3GuardUpdates", 0);
 		perfCounters.put("Condition3TableUpdates", 0);
+		perfCounters.put("CouterexampleForGuard", 0);
+		perfCounters.put("ExecutedInstances", 0);
     }
 
     private void incPerfCounter(String key) {
@@ -96,6 +98,7 @@ public class RSFAAlgebraLearner<P, D> extends AlgebraLearner <SFA <P,D>, List <D
 			assert ba.AreEquivalent(phi, psi);
 		}
 
+		incPerfCounter("CouterexampleForGuard");
 		P phi = learner.updateModel(ce);
 		modelGuards.put(rowIdxPair, phi);
 
@@ -417,7 +420,9 @@ public class RSFAAlgebraLearner<P, D> extends AlgebraLearner <SFA <P,D>, List <D
 		    			if (modelGuards.containsKey(rowIdxPair)) {
 		    				phi = modelGuards.get(rowIdxPair);
 		    			}else {
-			    			RSFABALearnerSimulatedMembershipOracle<D> simOracle = 
+		    				incPerfCounter("ExecutedInstances");
+
+		    				RSFABALearnerSimulatedMembershipOracle<D> simOracle = 
 			        				new RSFABALearnerSimulatedMembershipOracle<D>(table, srcRowIdx, dstRowIdx);
 							AlgebraLearner<P,D> learner = 
 									baLearnerFactory.getBALearner(simOracle);
@@ -630,6 +635,14 @@ public class RSFAAlgebraLearner<P, D> extends AlgebraLearner <SFA <P,D>, List <D
 	
 	public Integer Condition3TableUpdates() {
 		return perfCounters.get("Condition3TableUpdates");
+	}
+	
+	public Integer getNumCouterexampleForGuard() {
+		return perfCounters.get("CouterexampleForGuard");
+	}
+	
+	public Integer getNumExecutedInstances() {
+		return perfCounters.get("ExecutedInstances");
 	}
 	
 	public Integer getSizeU() {
