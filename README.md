@@ -12,5 +12,5 @@ How to run
 
 3. Run it as java program. We recommend to allow the program to allocate a large memory. We ran the largest experiment with options as follows.
 ```
-java -Xms200g -Xmx200g -ea -jar new_condition3_equality.jar > results
+java -Xms200g -Xmx200g -ea -jar rsfalearning-0.0.1-SNAPSHOT-jar-with-dependencies.jar > results
 ```
